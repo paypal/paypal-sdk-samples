@@ -1,0 +1,115 @@
+<script src="https://localhost.paypal.com:8443/sdk/js?client-id=alc_client1&components=card-fields,buttons"></script>
+
+<h1>Multiple Transactional Card Fields + Button</h1>
+
+<p>
+    Multiple card fields which approve a transaction when the user enters their card number and clicks the button
+</p>
+
+<div id="multi-transactional-card-field">
+    <div id="card-number-field-container" class="container card-field-container"></div>
+    <div id="card-cvv-field-container" class="container card-field-container"></div>
+    <div id="card-expiry-field-container" class="container card-field-container"></div>
+    <div id="button-container" class="container button-container"></div>
+</div>
+
+<script>
+    (() => {
+        const container = document.querySelector('#multi-transactional-card-field');
+
+        const cardNumberContainer = container.querySelector('#card-number-field-container');
+        const cardCVVContainer = container.querySelector('#card-cvv-field-container');
+        const cardExpiryContainer = container.querySelector('#card-expiry-field-container');
+        const buttonContainer = container.querySelector('#button-container');
+
+        const createOrder = (data, actions) => {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '5.00'
+                    }
+                }]
+            });
+        };
+
+        const onApprove = (data) => {
+            console.warn('Payment Approved:', data)
+        };
+
+        let cardNumberFieldValid = false;
+
+        const setValidNumberStyle = () => {
+            cardNumberContainer.style.border = '1px solid #333';
+        };
+
+        const setInvalidNumberStyle = () => {
+            cardNumberContainer.style.border = '1px solid red';
+        };
+
+        let cardCVVFieldValid = false;
+
+        const setValidCVVStyle = () => {
+            cardCVVContainer.style.border = '1px solid #333';
+        };
+
+        const setInvalidCVVStyle = () => {
+            cardCVVContainer.style.border = '1px solid red';
+        };
+
+        let cardExpiryFieldValid = false;
+
+        const setValidExpiryStyle = () => {
+            cardExpiryContainer.style.border = '1px solid #333';
+        };
+
+        const setInvalidExpiryStyle = () => {
+            cardExpiryContainer.style.border = '1px solid red';
+        };
+
+        paypal.CardNumberField({
+            onChange: ({valid}) => {
+                cardNumberFieldValid = valid;
+                if (cardNumberFieldValid) {
+                    setValidNumberStyle();
+                }
+            }
+        }).render(cardNumberContainer);
+
+        paypal.CardCVVField({
+            onChange: ({valid}) => {
+                cardCVVFieldValid = valid;
+                if (cardCVVFieldValid) {
+                    setValidCVVStyle();
+                }
+            }
+        }).render(cardCVVContainer);
+
+        paypal.CardExpiryField({
+            onChange: ({valid}) => {
+                cardExpiryFieldValid = valid;
+                if (cardExpiryFieldValid) {
+                    setValidExpiryStyle();
+                }
+            }
+        }).render(cardExpiryContainer);
+
+        paypal.Buttons({
+            fundingSource: paypal.FUNDING.CARD,
+            onClick: () => {
+                if (!cardNumberFieldValid) {
+                    setInvalidNumberStyle();
+                }
+
+                if (!cardCVVFieldValid) {
+                    setInvalidCVVStyle();
+                }
+
+                if (!cardExpiryFieldValid) {
+                    setInvalidExpiryStyle();
+                }
+            },
+            createOrder,
+            onApprove
+        }).render(buttonContainer);
+    })();
+</script>

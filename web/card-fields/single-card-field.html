@@ -1,0 +1,65 @@
+<script src="https://localhost.paypal.com:8443/sdk/js?client-id=alc_client1&components=card-fields,buttons"></script>
+
+<h1>Single Transactional Card Field + Button</h1>
+
+<p>
+    Single card field which approves a transaction when the user enters their card number and clicks the button
+</p>
+
+<div id="single-transactional-card-field">
+    <div id="card-field-container" class="container card-field-container"></div>
+    <div id="button-container" class="container button-container"></div>
+</div>
+
+<script>
+    (() => {
+        const container = document.querySelector('#single-transactional-card-field');
+
+        const cardContainer = container.querySelector('#card-field-container');
+        const buttonContainer = container.querySelector('#button-container');
+
+        let cardFieldValid = false;
+
+        const createOrder = (data, actions) => {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '5.00'
+                    }
+                }]
+            });
+        };
+
+        const onApprove = (data) => {
+            console.warn('Payment Approved:', data)
+        };
+
+        const setValidStyle = () => {
+            cardContainer.style.border = '1px solid #333';
+        };
+
+        const setInvalidStyle = () => {
+            cardContainer.style.border = '1px solid red';
+        };
+
+        paypal.CardField({
+            onChange: ({valid}) => {
+                cardFieldValid = valid;
+                if (cardFieldValid) {
+                    setValidStyle();
+                }
+            }
+        }).render(cardContainer);
+
+        paypal.Buttons({
+            fundingSource: paypal.FUNDING.CARD,
+            onClick: () => {
+                if (!cardFieldValid) {
+                    setInvalidStyle();
+                }
+            },
+            createOrder,
+            onApprove
+        }).render(buttonContainer);
+    })();
+</script>
