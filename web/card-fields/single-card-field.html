@@ -1,65 +1,215 @@
-<script src="https://localhost.paypal.com:8443/sdk/js?client-id=alc_client1&components=card-fields,buttons"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Add meta tags for mobile and IE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>PayPal Single Card Fields | Client Example</title>
 
-<h1>Single Transactional Card Field + Button</h1>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: Helvetica;
+      }
 
-<p>
-    Single card field which approves a transaction when the user enters their card number and clicks the button
-</p>
+      .container {
+        width: 445px;
+        margin-bottom: 10px;
+      }
 
-<div id="single-transactional-card-field">
-    <div id="card-field-container" class="container card-field-container"></div>
-    <div id="button-container" class="container button-container"></div>
-</div>
+      .card-field-container {
+        border: 1px solid #909697;
+        border-radius: 3px;
+        line-height: 0px;
+        min-height: 35px;
+        display: none;
+        height: 62px;
+      }
 
-<script>
-    (() => {
-        const container = document.querySelector('#single-transactional-card-field');
+      .valid {
+        border: 1px solid #909697;
+      }
+      .invalid {
+        border: 1px solid red;
+      }
 
-        const cardContainer = container.querySelector('#card-field-container');
-        const buttonContainer = container.querySelector('#button-container');
+      button {
+        width: 100%;
+        height: 48px;
+        background: #000000;
+        border-radius: 25px;
+        color: white;
+        font-size: 18px;
+        border-color: #000000;
+        cursor: pointer;
+      }
+      #errors-container {
+        display: none;
+        margin-bottom: 10px;
+      }
+      .error-icon {
+        color: red;
+      }
+      .loading {
+        transform: translateX(0);
+        animation: 1.5s loading-placeholder ease-in-out infinite;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      @keyframes loading-placeholder {
+        0% {
+          opacity: 0.1;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
 
-        let cardFieldValid = false;
+  <body>
+    <!-- PayPal JS SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=alc_client1&components=card-fields,buttons&debug=true&intent=capture"></script>
 
-        const createOrder = (data, actions) => {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        value: '5.00'
-                    }
-                }]
-            });
-        };
+    <h2>PayPal Single Card Fields</h2>
+    <div id="single-transactional-card-field-custom-button">
+      <div
+        id="card-field-container"
+        class="container card-field-container"
+      ></div>
 
-        const onApprove = (data) => {
-            console.warn('Payment Approved:', data)
-        };
+      <div id="errors-container">
+        <i class="fas fa-exclamation-triangle error-icon"></i>
+        <span id="errors"></span>
+      </div>
 
-        const setValidStyle = () => {
-            cardContainer.style.border = '1px solid #333';
-        };
+      <div id="button-container" class="container button-container">
+        <button id="button" type="button">Pay now</button>
+      </div>
+    </div>
 
-        const setInvalidStyle = () => {
-            cardContainer.style.border = '1px solid red';
-        };
+    <script>
+      const container = document.querySelector(
+        "#single-transactional-card-field-custom-button"
+      );
 
-        paypal.CardField({
-            onChange: ({valid}) => {
-                cardFieldValid = valid;
-                if (cardFieldValid) {
-                    setValidStyle();
-                }
-            }
-        }).render(cardContainer);
+      const cardContainer = container.querySelector("#card-field-container");
+      const buttonContainer = container.querySelector("#button-container");
+      const errorsContainer = container.querySelector("#errors-container");
+      const errorsSpan = errorsContainer.querySelector("#errors");
+      const button = buttonContainer.querySelector("#button");
 
-        paypal.Buttons({
-            fundingSource: paypal.FUNDING.CARD,
-            onClick: () => {
-                if (!cardFieldValid) {
-                    setInvalidStyle();
-                }
-            },
-            createOrder,
-            onApprove
-        }).render(buttonContainer);
-    })();
-</script>
+      cardContainer.style.display = "block";
+      buttonContainer.style.display = "block";
+
+      let cardFieldValid = false;
+      let cardFieldErrors = [];
+      let submitting = false;
+
+      const setValidStyle = () => {
+        cardContainer.classList.remove("invalid");
+        cardContainer.classList.add("valid");
+        errorsContainer.style.display = "none";
+      };
+
+      const setInvalidStyle = () => {
+        cardContainer.classList.add("invalid");
+        if (cardFieldErrors.length) {
+          errorsContainer.style.display = "block";
+          errorsSpan.innerHTML = cardFieldErrors.join(", ");
+        }
+      };
+
+      const cardStyle = {
+        height: "60px",
+        padding: "10px",
+        fontSize: "18px",
+        fontFamily: '"Open Sans", sans-serif',
+        transition: "all 0.5s ease-out",
+        "input.invalid": {
+          color: "red",
+        }
+      };
+
+      const placeholderObject = {
+        number: "Card number",
+        expiry: "MM/YY",
+        cvv: "CVV",
+      };
+
+      const cardField = paypal.CardFields({
+        style: cardStyle,
+        placeholder: placeholderObject,
+        createOrder: (data, actions) => {
+          return actions.order.create({
+            purchase_units: [
+              {
+                description: "Sporting Goods",
+                amount: {
+                  currency_code: "USD",
+                  value: "10.00",
+                },
+                shipping: {
+                  method: "United States Postal Service",
+                  address: {
+                    name: {
+                      give_name: "John",
+                      surname: "Doe",
+                    },
+                    address_line_1: "123 Townsend St",
+                    address_line_2: "Floor 6",
+                    admin_area_2: "San Francisco",
+                    admin_area_1: "CA",
+                    postal_code: "94107",
+                    country_code: "US",
+                  },
+                },
+              },
+            ],
+          });
+        },
+        onApprove: (data) => {
+          console.log("Payment Approved: ", data);
+          button.classList.remove("loading");
+        },
+        onChange: ({ valid, errors }) => {
+          cardFieldValid = valid;
+          cardFieldErrors = errors;
+          if (cardFieldValid) {
+            setValidStyle();
+          }
+        },
+      });
+
+      cardField.render(cardContainer);
+
+      button.addEventListener("click", () => {
+        if (cardFieldValid) {
+          button.classList.add("loading");
+
+          if (submitting) return;
+          submitting = true;
+
+          cardField.submit().then(() => {
+            cardField.close();
+            container.innerHTML = "";
+            container.innerHTML = "<h3>Thank you for your payment!</h3>";
+            submitting = false;
+          });
+        } else {
+          setInvalidStyle();
+        }
+      });
+    </script>
+  </body>
+</html>
