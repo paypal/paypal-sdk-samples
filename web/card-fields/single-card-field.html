@@ -83,10 +83,8 @@
 
     <h2>PayPal Single Card Fields</h2>
     <div id="single-transactional-card-field-custom-button">
-      <div
-        id="card-field-container"
-        class="container card-field-container"
-      ></div>
+        
+      <div id="card-field-container" class="container card-field-container"></div>
 
       <div id="errors-container">
         <i class="fas fa-exclamation-triangle error-icon"></i>
@@ -123,10 +121,16 @@
       };
 
       const setInvalidStyle = () => {
+        const errorMap = {
+          INVALID_NUMBER: 'Invalid card number',
+          INVALID_EXPIRY: 'Invalid expiration date',
+          INVALID_CVV: 'Invalid CVV code'
+        }
+
         cardContainer.classList.add("invalid");
         if (cardFieldErrors.length) {
           errorsContainer.style.display = "block";
-          errorsSpan.innerHTML = cardFieldErrors.join(", ");
+          errorsSpan.innerHTML = cardFieldErrors.map( e => errorMap[e] || e ).join(", ");
         }
       };
 
