@@ -204,12 +204,22 @@
           if (submitting) return;
           submitting = true;
 
-          cardField.submit().then(() => {
-            cardField.close();
-            container.innerHTML = "";
-            container.innerHTML = "<h3>Thank you for your payment!</h3>";
-            submitting = false;
-          });
+          cardField
+            .submit()
+            .then(() => {
+              cardField.close();
+              container.innerHTML = "";
+              container.innerHTML = "<h3>Thank you for your payment!</h3>";
+              submitting = false;
+            })
+            .catch((error) => {
+              submitting = false;
+              button.classList.remove("loading");
+              console.log("Error with payment: ", error);
+              alert(
+                "There was an error, please check the console for more information"
+              );
+            });
         } else {
           setInvalidStyle();
         }
