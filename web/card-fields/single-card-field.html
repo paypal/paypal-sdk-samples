@@ -158,28 +158,59 @@
           return actions.order.create({
             purchase_units: [
               {
-                description: "Sporting Goods",
                 amount: {
                   currency_code: "USD",
                   value: "10.00",
+                  breakdown: {
+                    item_total: {
+                      currency_code: "USD",
+                      value: "10.00",
+                    }
+                  },
+                },
+                payee: {
+                  email_address: "lex-grailed-us-seller-01@paypal.com",
+                  display_data: {
+                    business_email: "business_email@paypal.com",
+                    brand_name: "INC"
+                  },
                 },
                 shipping: {
-                  method: "United States Postal Service",
                   address: {
-                    name: {
-                      give_name: "John",
-                      surname: "Doe",
-                    },
-                    address_line_1: "123 Townsend St",
-                    address_line_2: "Floor 6",
-                    admin_area_2: "San Francisco",
+                    shipping_name: "William Woodbridge",
+                    phone: "02097822101",
+                    address_line_1: "500 Hillside Street",
+                    address_line_2: "#100",
                     admin_area_1: "CA",
-                    postal_code: "94107",
+                    admin_area_2: "San Jose",
+                    postal_code: "95131",
+                    country_code: "US",
+                    address_details: {},
+                  },
+                  method: "USPS",
+                },
+                payer: {
+                  name: {
+                    given_name: "TestFirst",
+                    surname: "TestLast",
+                  },
+                  email_address: "_sys_aquarium-17660134339814251@paypal.com",
+                  phone: {
+                    phone_number: {
+                      national_number: "19876543210",
+                    },
+                  },
+                  address: {
+                    address_line_1: "2211 North First Street",
+                    address_line_2: "Floor 6",
+                    admin_area_2: "San Jose",
+                    admin_area_1: "CA",
+                    postal_code: "95126",
                     country_code: "US",
                   },
                 },
               },
-            ],
+            ]
           });
         },
         onApprove: (data) => {
