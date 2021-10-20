@@ -1,115 +1,351 @@
-<script src="https://localhost.paypal.com:8443/sdk/js?client-id=alc_client1&components=card-fields,buttons"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Add meta tags for mobile and IE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>PayPal Multi Card Fields | Client Example</title>
 
-<h1>Multiple Transactional Card Fields + Button</h1>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: Helvetica;
+      }
 
-<p>
-    Multiple card fields which approve a transaction when the user enters their card number and clicks the button
-</p>
+      .container {
+        width: 445px;
+        margin-bottom: 10px;
+      }
 
-<div id="multi-transactional-card-field">
-    <div id="card-number-field-container" class="container card-field-container"></div>
-    <div id="card-cvv-field-container" class="container card-field-container"></div>
-    <div id="card-expiry-field-container" class="container card-field-container"></div>
-    <div id="button-container" class="container button-container"></div>
-</div>
+      .card-field-container {
+        border: 1px solid #909697;
+        border-radius: 3px;
+        line-height: 0px;
+        min-height: 35px;
+        display: none;
+        height: 62px;
+      }
 
-<script>
-    (() => {
-        const container = document.querySelector('#multi-transactional-card-field');
+      .valid {
+        border: 1px solid #909697;
+      }
+      .invalid {
+        border: 1px solid red;
+      }
 
-        const cardNumberContainer = container.querySelector('#card-number-field-container');
-        const cardCVVContainer = container.querySelector('#card-cvv-field-container');
-        const cardExpiryContainer = container.querySelector('#card-expiry-field-container');
-        const buttonContainer = container.querySelector('#button-container');
+      button {
+        width: 100%;
+        height: 48px;
+        background: #000000;
+        border-radius: 25px;
+        color: white;
+        font-size: 18px;
+        border-color: #000000;
+        cursor: pointer;
+      }
+      .errors-container {
+        display: none;
+        margin-bottom: 10px;
+      }
+      .error-icon {
+        color: red;
+      }
+      .loading {
+        transform: translateX(0);
+        animation: 1.5s loading-placeholder ease-in-out infinite;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      @keyframes loading-placeholder {
+        0% {
+          opacity: 0.1;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.1;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  </head>
 
-        const createOrder = (data, actions) => {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        value: '5.00'
+  <body>
+    <!-- PayPal JS SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=alc_client1&components=card-fields,buttons&debug=true&intent=capture"></script>
+
+    <h2>PayPal Multiple Card Fields</h2>
+    <div id="multi-transactional-card-field">
+        <div id="card-number-field-container" class="container card-field-container"></div>
+        <div id="errors-number-container" class="errors-container">
+          <i class="fas fa-exclamation-triangle error-icon"></i>
+          <span id="errors-number"></span>
+        </div>
+        <div id="card-cvv-field-container" class="container card-field-container"></div>
+        <div id="errors-cvv-container" class="errors-container">
+          <i class="fas fa-exclamation-triangle error-icon"></i>
+          <span id="errors-cvv"></span>
+        </div>
+        <div id="card-expiry-field-container" class="container card-field-container"></div>
+        <div id="errors-expiry-container" class="errors-container">
+          <i class="fas fa-exclamation-triangle error-icon"></i>
+          <span id="errors-expiry"></span>
+        </div>
+        <div id="button-container" class="container button-container">
+            <button id="button">Submit</button>
+        </div>
+    </div>
+
+    <script>
+
+      const container = document.querySelector('#multi-transactional-card-field');
+
+      const cardNumberContainer = container.querySelector('#card-number-field-container');
+      const cardCvvContainer = container.querySelector('#card-cvv-field-container');
+      const cardExpiryContainer = container.querySelector('#card-expiry-field-container');
+      const buttonContainer = container.querySelector('#button-container');
+      const button = buttonContainer.querySelector('#button');
+
+      const errorsNumberContainer = container.querySelector("#errors-number-container");
+      const errorsNumberSpan = errorsNumberContainer.querySelector("#errors-number");
+      const errorsCvvContainer = container.querySelector("#errors-cvv-container");
+      const errorsCvvSpan = errorsCvvContainer.querySelector("#errors-cvv");
+      const errorsExpiryContainer = container.querySelector("#errors-expiry-container");
+      const errorsExpirySpan = errorsExpiryContainer.querySelector("#errors-expiry");
+
+      cardNumberContainer.style.display = 'block';
+      cardCvvContainer.style.display = 'block';
+      cardExpiryContainer.style.display = 'block';
+      buttonContainer.style.display = 'block';
+
+      let submitting = false;
+      let cardNumberErrors = [];
+      let cardCvvErrors = [];
+      let cardExpiryErrors = [];
+      let cardNumberFieldValid = false;
+      let cardCvvFieldValid = false;
+      let cardExpiryFieldValid = false;
+
+      const setValidNumberStyle = () => {
+        cardNumberContainer.classList.remove("invalid");
+        cardNumberContainer.classList.add("valid");
+        errorsNumberContainer.style.display = "none";
+      };
+
+      const setInvalidNumberStyle = () => {
+        cardNumberContainer.classList.add("invalid");
+      };
+
+
+      const setValidCvvStyle = () => {
+        cardCvvContainer.classList.remove("invalid");
+        cardCvvContainer.classList.add("valid");
+        errorsCvvContainer.style.display = "none";
+      };
+
+      const setInvalidCVVStyle = () => {
+        cardCvvContainer.classList.add("invalid");
+      };
+
+
+      const setValidExpiryStyle = () => {
+        cardExpiryContainer.classList.remove("invalid");
+        cardExpiryContainer.classList.add("valid");
+        errorsExpiryContainer.style.display = "none";
+      };
+
+      const setInvalidExpiryStyle = () => {
+        cardExpiryContainer.classList.add("invalid");
+      };
+
+      const setInvalidErrorsStyle = () => {
+        const errorMap = {
+          INVALID_NUMBER: "Invalid card number",
+          INVALID_EXPIRY: "Invalid expiration date",
+          INVALID_CVV: "Invalid CVV code",
+        };
+
+
+        if (!cardNumberFieldValid) {
+          cardNumberContainer.classList.add("invalid");
+          if (cardNumberErrors.length) {
+            errorsNumberContainer.style.display = "block";
+            errorsNumberSpan.innerHTML = cardNumberErrors
+              .map((e) => errorMap[e] || e)
+              .join(", ");
+          }
+        }
+
+        if(!cardCvvFieldValid) {
+          cardCvvContainer.classList.add("invalid");
+          if (cardCvvErrors.length) {
+            errorsCvvContainer.style.display = "block";
+            errorsCvvSpan.innerHTML = cardCvvErrors
+              .map((e) => errorMap[e] || e)
+              .join(", ");
+          }
+        }
+
+        if(!cardExpiryFieldValid) {
+          cardExpiryContainer.classList.add("invalid");
+          if (cardExpiryErrors.length) {
+            errorsExpiryContainer.style.display = "block";
+            errorsExpirySpan.innerHTML = cardExpiryErrors
+              .map((e) => errorMap[e] || e)
+              .join(", ");
+          }
+        }
+
+      };
+
+      const cardFields = paypal.CardFields({
+        createOrder: (data, actions) => {
+          return actions.order.create({
+            purchase_units: [
+              {
+                amount: {
+                  currency_code: "USD",
+                  value: "10.00",
+                  breakdown: {
+                    item_total: {
+                      currency_code: "USD",
+                      value: "10.00",
                     }
-                }]
+                  },
+                },
+                payee: {
+                  email_address: "lex-grailed-us-seller-01@paypal.com",
+                  display_data: {
+                    business_email: "business_email@paypal.com",
+                    brand_name: "INC"
+                  },
+                },
+                shipping: {
+                  address: {
+                    shipping_name: "William Woodbridge",
+                    phone: "02097822101",
+                    address_line_1: "500 Hillside Street",
+                    address_line_2: "#100",
+                    admin_area_1: "CA",
+                    admin_area_2: "San Jose",
+                    postal_code: "95131",
+                    country_code: "US",
+                    address_details: {},
+                  },
+                  method: "USPS",
+                }
+              },
+            ],
+            payer: {
+              name: {
+                given_name: "TestFirst",
+                surname: "TestLast",
+              },
+              email_address: "_sys_aquarium-17660134339814251@paypal.com",
+              phone: {
+                phone_number: {
+                  national_number: "19876543210",
+                },
+              },
+              address: {
+                address_line_1: "2211 North First Street",
+                address_line_2: "Floor 6",
+                admin_area_2: "San Jose",
+                admin_area_1: "CA",
+                postal_code: "95126",
+                country_code: "US",
+              },
+            }
+          })
+        },
+        onApprove: (data) => {
+          console.log("Payment Approved: ", data);
+          button.classList.remove("loading");
+        }
+      });
+
+      const customStyles = {
+        height: "60px",
+        padding: "10px",
+        fontSize: "18px",
+        fontFamily: '"Open Sans", sans-serif',
+        transition: "all 0.5s ease-out",
+        "input.invalid": {
+          color: "red",
+        },
+      };
+      cardFields.NumberField({
+          style: customStyles,
+          onChange: ({valid, errors}) => {
+            cardNumberErrors = errors;
+            cardNumberFieldValid = valid;
+            if (cardNumberFieldValid) {
+                setValidNumberStyle();
+            }
+          }
+      }).render(cardNumberContainer);
+
+      cardFields.CVVField({
+          style: customStyles,
+          onChange: ({valid, errors}) => {
+            cardCvvErrors = errors;
+            cardCvvFieldValid = valid;
+            if (cardCvvFieldValid) {
+                setValidCvvStyle();
+            }
+          }
+      }).render(cardCvvContainer);
+
+      cardFields.ExpiryField({
+          style: customStyles,
+          onChange: ({valid, errors}) => {
+            cardExpiryErrors = errors;
+            cardExpiryFieldValid = valid;
+            if (cardExpiryFieldValid) {
+                setValidExpiryStyle();
+            }
+          }
+      }).render(cardExpiryContainer);
+
+      button.addEventListener('click', () => {
+          if (!cardNumberFieldValid) {
+              setInvalidNumberStyle();
+          }
+
+          if (!cardCvvFieldValid) {
+              setInvalidCVVStyle();
+          }
+
+          if (!cardExpiryFieldValid) {
+              setInvalidExpiryStyle();
+          }
+
+          if (cardNumberFieldValid && cardCvvFieldValid && cardExpiryFieldValid) {
+
+            if (submitting) return;
+            submitting = true;
+
+            button.classList.add("loading");
+            cardFields.submit().then(() => {
+              cardFields.close();
+              container.innerHTML = "";
+              container.innerHTML = "<h3>Thank you for your payment!</h3>";
+              submitting = false;
+
+            }).catch(error => {
+              submitting = false;
+              button.classList.remove("loading");
+              console.log("Error with payment: ", error);
+              alert(
+                "There was an error, please check the console for more information"
+              );
             });
-        };
+          } else {
+            setInvalidErrorsStyle();
+          }
+      });
 
-        const onApprove = (data) => {
-            console.warn('Payment Approved:', data)
-        };
-
-        let cardNumberFieldValid = false;
-
-        const setValidNumberStyle = () => {
-            cardNumberContainer.style.border = '1px solid #333';
-        };
-
-        const setInvalidNumberStyle = () => {
-            cardNumberContainer.style.border = '1px solid red';
-        };
-
-        let cardCVVFieldValid = false;
-
-        const setValidCVVStyle = () => {
-            cardCVVContainer.style.border = '1px solid #333';
-        };
-
-        const setInvalidCVVStyle = () => {
-            cardCVVContainer.style.border = '1px solid red';
-        };
-
-        let cardExpiryFieldValid = false;
-
-        const setValidExpiryStyle = () => {
-            cardExpiryContainer.style.border = '1px solid #333';
-        };
-
-        const setInvalidExpiryStyle = () => {
-            cardExpiryContainer.style.border = '1px solid red';
-        };
-
-        paypal.CardNumberField({
-            onChange: ({valid}) => {
-                cardNumberFieldValid = valid;
-                if (cardNumberFieldValid) {
-                    setValidNumberStyle();
-                }
-            }
-        }).render(cardNumberContainer);
-
-        paypal.CardCVVField({
-            onChange: ({valid}) => {
-                cardCVVFieldValid = valid;
-                if (cardCVVFieldValid) {
-                    setValidCVVStyle();
-                }
-            }
-        }).render(cardCVVContainer);
-
-        paypal.CardExpiryField({
-            onChange: ({valid}) => {
-                cardExpiryFieldValid = valid;
-                if (cardExpiryFieldValid) {
-                    setValidExpiryStyle();
-                }
-            }
-        }).render(cardExpiryContainer);
-
-        paypal.Buttons({
-            fundingSource: paypal.FUNDING.CARD,
-            onClick: () => {
-                if (!cardNumberFieldValid) {
-                    setInvalidNumberStyle();
-                }
-
-                if (!cardCVVFieldValid) {
-                    setInvalidCVVStyle();
-                }
-
-                if (!cardExpiryFieldValid) {
-                    setInvalidExpiryStyle();
-                }
-            },
-            createOrder,
-            onApprove
-        }).render(buttonContainer);
-    })();
-</script>
+    </script>
+  </body>
+</html>
