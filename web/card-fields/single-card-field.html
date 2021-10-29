@@ -152,6 +152,7 @@
       };
 
       const cardField = paypal.CardFields({
+        branded: false,
         style: cardStyle,
         placeholder: placeholderObject,
         createOrder: (data, actions) => {
