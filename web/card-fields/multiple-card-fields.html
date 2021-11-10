@@ -73,7 +73,7 @@
 
   <body>
     <!-- PayPal JS SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=alc_client1&components=card-fields,buttons&debug=true&intent=capture"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=test&components=card-fields,buttons&debug=true&intent=capture"></script>
 
     <h2>PayPal Multiple Card Fields</h2>
     <div id="multi-transactional-card-field">
@@ -263,6 +263,12 @@
         onApprove: (data) => {
           console.log("Payment Approved: ", data);
           button.classList.remove("loading");
+
+          console.log("Payment Approved: ", data, actions);
+          const { orderID } = data;
+
+          // Capture the order in your server with order ID `orderID`
+          
         }
       });
 
@@ -338,9 +344,7 @@
               submitting = false;
               button.classList.remove("loading");
               console.log("Error with payment: ", error);
-              alert(
-                "There was an error, please check the console for more information"
-              );
+              alert("There was an error, please check the console for more information");
             });
           } else {
             setInvalidErrorsStyle();
