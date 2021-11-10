@@ -97,9 +97,7 @@
     </div>
 
     <script>
-      const container = document.querySelector(
-        "#single-transactional-card-field-custom-button"
-      );
+      const container = document.querySelector("#single-transactional-card-field-custom-button");
 
       const cardContainer = container.querySelector("#card-field-container");
       const buttonContainer = container.querySelector("#button-container");
@@ -214,9 +212,14 @@
             ]
           });
         },
-        onApprove: (data) => {
-          console.log("Payment Approved: ", data);
+        onApprove: (data, actions) => {
+          console.log("Payment Approved: ", data, actions);
           button.classList.remove("loading");
+
+          const { orderID } = data;
+
+          // Capture the order in your server with order ID `orderID`
+          
         },
         onChange: ({ valid, errors }) => {
           cardFieldValid = valid;
@@ -248,9 +251,7 @@
               submitting = false;
               button.classList.remove("loading");
               console.log("Error with payment: ", error);
-              alert(
-                "There was an error, please check the console for more information"
-              );
+              alert("There was an error, please check the console for more information");
             });
         } else {
           setInvalidStyle();
