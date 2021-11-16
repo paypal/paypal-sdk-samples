@@ -284,9 +284,9 @@
       };
       cardFields.NumberField({
           style: customStyles,
-          onChange: ({valid, errors}) => {
+          onChange: ({isValid, errors}) => {
             cardNumberErrors = errors;
-            cardNumberFieldValid = valid;
+            cardNumberFieldValid = isValid;
             if (cardNumberFieldValid) {
                 setValidNumberStyle();
             }
@@ -295,9 +295,9 @@
 
       cardFields.CVVField({
           style: customStyles,
-          onChange: ({valid, errors}) => {
+          onChange: ({isValid, errors}) => {
             cardCvvErrors = errors;
-            cardCvvFieldValid = valid;
+            cardCvvFieldValid = isValid;
             if (cardCvvFieldValid) {
                 setValidCvvStyle();
             }
@@ -306,9 +306,9 @@
 
       cardFields.ExpiryField({
           style: customStyles,
-          onChange: ({valid, errors}) => {
+          onChange: ({isValid, errors}) => {
             cardExpiryErrors = errors;
-            cardExpiryFieldValid = valid;
+            cardExpiryFieldValid = isValid;
             if (cardExpiryFieldValid) {
                 setValidExpiryStyle();
             }
