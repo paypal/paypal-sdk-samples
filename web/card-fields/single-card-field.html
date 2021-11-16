@@ -221,8 +221,8 @@
           // Capture the order in your server with order ID `orderID`
           
         },
-        onChange: ({ valid, errors }) => {
-          cardFieldValid = valid;
+        onChange: ({ isValid, errors }) => {
+          cardFieldValid = isValid;
           cardFieldErrors = errors;
           if (cardFieldValid) {
             setValidStyle();
